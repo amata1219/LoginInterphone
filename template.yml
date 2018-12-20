@@ -1,0 +1,56 @@
+Aliases: 'main'
+FirstJoin:
+  Message:
+    Display: true
+    Text: '&d[player] joined [server] in for the first time!'
+  Sound:
+    Play: true
+    Type: 'BLOCK_COMPARATOR_CLICK'
+    Volum: 1.0
+    Pitch: 1.0
+    Repeat: 5
+    Interval: 0.75
+NormalJoin:
+  Message:
+    Display: true
+    Text: '&b[player] joined [server]'
+  Sound:
+    Play: true
+    Type: 'BLOCK_COMPARATOR_CLICK'
+    Volum: 1.0
+    Pitch: 1.0
+    Repeat: 5
+    Interval: 0.75
+ReJoin:
+  Message:
+    Display: true
+    Text: '&b[player] rejoined [server]'
+  Sound:
+    Play: true
+    Type: 'BLOCK_COMPARATOR_CLICK'
+    Volum: 1.0
+    Pitch: 1.0
+    Repeat: 5
+    Interval: 0.75
+Switch:
+  Message:
+    Display: true
+    Text: '&b[player] switched from [from_server] to [to_server]'
+  Sound:
+    Play: true
+    Type: 'BLOCK_COMPARATOR_CLICK'
+    Volum: 1.0
+    Pitch: 1.0
+    Repeat: 5
+    Interval: 0.75
+Quit:
+  Message:
+    Display: true
+    Text: '&b[player] left [server]'
+  Sound:
+    Play: true
+    Type: 'BLOCK_COMPARATOR_CLICK'
+    Volum: 1.0
+    Pitch: 1.0
+    Repeat: 5
+    Interval: 0.75
