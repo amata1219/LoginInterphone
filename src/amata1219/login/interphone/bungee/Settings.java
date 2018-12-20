@@ -1,5 +1,6 @@
 package amata1219.login.interphone.bungee;
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.config.Configuration;
 
 public class Settings {
@@ -15,7 +16,7 @@ public class Settings {
 
 	public Settings(Type type, Configuration config){
 		display = config.getBoolean(type.getString() + ".Message.Display");
-		text = config.getString(type.getString() + ".Message.Text");
+		text = ChatColor.translateAlternateColorCodes('&', config.getString(type.getString() + ".Message.Text"));
 		play = config.getBoolean(type.getString() + ".Sound.Play");
 		sound = config.getString(type.getString() + ".Sound.Type");
 		volume = config.getFloat(type.getString() + ".Sound.Volume");
