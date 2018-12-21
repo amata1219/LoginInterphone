@@ -179,10 +179,12 @@ public class Nucleus extends Plugin implements Listener {
 				out.writeUTF("CHECK_JOIN_TYPE");
 				out.writeUTF(uuid.toString());
 
-				server.sendData("BungeeCord", out.toByteArray());
+				player.sendData("BungeeCord", out.toByteArray());
+
+				//server.sendData("BungeeCord", out.toByteArray());
 			}
 
-		}, 500, TimeUnit.MILLISECONDS);
+		}, 250, TimeUnit.MILLISECONDS);
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -204,7 +206,7 @@ public class Nucleus extends Plugin implements Listener {
 				locs.put(uuid, serverName);
 			}
 
-		}, 640, TimeUnit.MILLISECONDS);
+		}, 1000, TimeUnit.MILLISECONDS);
 	}
 
 	@EventHandler
@@ -231,7 +233,9 @@ public class Nucleus extends Plugin implements Listener {
 
 	@EventHandler
 	public void onReceive(PluginMessageEvent e){
-		if(!e.getTag().equals("BungeeCord") && !e.getTag().equals("bungeecord:main"))
+		System.out.println(e.getTag());
+
+		if(!e.getTag().equals("BungeeCord") && !e.getTag().equals("BungeeCord"))
 			return;
 
 		Channel channel = Channel.newInstance(e.getData());
@@ -269,6 +273,9 @@ public class Nucleus extends Plugin implements Listener {
 
 	public void sendMessage(Type type, String playerName, String... serverNames){
 		for(ServerInfo server : getProxy().getServers().values()){
+			if(!electrons.containsKey(server.getName()))
+				return;
+
 			Settings settings = electrons.get(server.getName()).settings.get(type);
 			if(!settings.isDisplay())
 				continue;
@@ -288,7 +295,7 @@ public class Nucleus extends Plugin implements Listener {
 
 	public void playSound(Type type){
 		for(ServerInfo server : getProxy().getServers().values()){
-			if(server.getPlayers().isEmpty())
+			if(!electrons.containsKey(server.getName()))
 				return;
 
 			Settings settings = electrons.get(server.getName()).settings.get(type);

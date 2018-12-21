@@ -28,16 +28,16 @@ public class Electron extends JavaPlugin implements Listener, PluginMessageListe
 
 		getServer().getPluginManager().registerEvents(this, this);
 
-		getServer().getMessenger().registerOutgoingPluginChannel(this, "bungeecord:main");
-		getServer().getMessenger().registerIncomingPluginChannel(this, "bungeecord:main", this);
+		getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+		getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
 	}
 
 	@Override
 	public void onDisable(){
 		HandlerList.unregisterAll((JavaPlugin) this);
 
-		getServer().getMessenger().unregisterOutgoingPluginChannel(this, "bungeecord:main");
-		getServer().getMessenger().unregisterIncomingPluginChannel(this, "bungeecord:main", this);
+		getServer().getMessenger().unregisterOutgoingPluginChannel(this, "BungeeCord");
+		getServer().getMessenger().unregisterIncomingPluginChannel(this, "BungeeCord", this);
 	}
 
 	public static Electron getPlugin(){
@@ -56,7 +56,9 @@ public class Electron extends JavaPlugin implements Listener, PluginMessageListe
 
 	@Override
 	public void onPluginMessageReceived(String tag, Player player, byte[] data) {
-		if(!tag.equals("BungeeCord") && !tag.equals("bungeecord:main"))
+		System.out.println(tag);
+
+		if(!tag.equals("BungeeCord") && !tag.equals("BungeeCord"))
 			return;
 
 		Channel channel = Channel.newInstance(data);
@@ -75,7 +77,7 @@ public class Electron extends JavaPlugin implements Listener, PluginMessageListe
 			out.writeUTF(channel.get());
 			out.writeUTF(String.valueOf(Bukkit.getOfflinePlayer(UUID.fromString(channel.get())).hasPlayedBefore()));
 
-			player.sendPluginMessage(this, "bungeecord:main", out.toByteArray());
+			player.sendPluginMessage(this, "BungeeCord", out.toByteArray());
 		}else if(channel.get().equals("PLAY_SOUND")){
 			channel.read();
 			Sound sound = Sound.valueOf(channel.get());
