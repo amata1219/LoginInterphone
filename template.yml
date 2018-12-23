@@ -6,7 +6,7 @@ FirstJoin:
   Sound:
     Play: true
     Type: 'BLOCK_COMPARATOR_CLICK'
-    Volum: 1.0
+    Volume: 1.0
     Pitch: 1.0
     Repeat: 5
     Interval: 0.75
@@ -17,7 +17,7 @@ NormalJoin:
   Sound:
     Play: true
     Type: 'BLOCK_COMPARATOR_CLICK'
-    Volum: 1.0
+    Volume: 1.0
     Pitch: 1.0
     Repeat: 5
     Interval: 0.75
@@ -28,7 +28,7 @@ ReJoin:
   Sound:
     Play: true
     Type: 'BLOCK_COMPARATOR_CLICK'
-    Volum: 1.0
+    Volume: 1.0
     Pitch: 1.0
     Repeat: 5
     Interval: 0.75
@@ -39,7 +39,7 @@ Switch:
   Sound:
     Play: true
     Type: 'BLOCK_COMPARATOR_CLICK'
-    Volum: 1.0
+    Volume: 1.0
     Pitch: 1.0
     Repeat: 5
     Interval: 0.75
@@ -50,7 +50,7 @@ Quit:
   Sound:
     Play: true
     Type: 'BLOCK_COMPARATOR_CLICK'
-    Volum: 1.0
+    Volume: 1.0
     Pitch: 1.0
     Repeat: 5
     Interval: 0.75

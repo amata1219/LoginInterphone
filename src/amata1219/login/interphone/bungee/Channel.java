@@ -5,7 +5,7 @@ import com.google.common.io.ByteStreams;
 
 public class Channel {
 
-	public static final String PACKET_ID = "LoginInterphone";
+	public static final String PACKET_ID = "amata1219.login.interphone";
 
 	private ByteArrayDataInput in;
 
@@ -23,9 +23,13 @@ public class Channel {
 		return channel;
 	}
 
+	public ByteArrayDataInput getByteArrayDataInput(){
+		return in;
+	}
+
 	public void read(){
-		in.readUTF();
-		System.out.println("READ: " + message);
+		message = in.readUTF();
+		System.out.println(message);
 	}
 
 	public String get(){

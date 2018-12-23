@@ -22,7 +22,7 @@ public class Settings {
 		volume = config.getFloat(type.getString() + ".Sound.Volume");
 		pitch = config.getFloat(type.getString() + ".Sound.Pitch");
 		repeat = config.getInt(type.getString() + ".Sound.Repeat");
-		interval = Float.valueOf(config.getFloat(type.getString() + ".Sound.Interval") * 1000).intValue();
+		interval = Float.valueOf(config.getFloat(type.getString() + ".Sound.Interval") * 20).intValue();
 	}
 
 	public boolean isDisplay() {

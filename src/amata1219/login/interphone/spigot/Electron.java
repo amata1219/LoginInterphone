@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
@@ -56,40 +57,50 @@ public class Electron extends JavaPlugin implements Listener, PluginMessageListe
 
 	@Override
 	public void onPluginMessageReceived(String tag, Player player, byte[] data) {
-		System.out.println(tag);
-
-		if(!tag.equals("BungeeCord") && !tag.equals("BungeeCord"))
+		if(!tag.equalsIgnoreCase("BungeeCord") && !tag.equalsIgnoreCase("bungeecord:main"))
 			return;
 
 		Channel channel = Channel.newInstance(data);
 
 		channel.read();
-		if(!channel.get().equals(Channel.PACKET_ID))
+		if(!channel.get().equalsIgnoreCase(Channel.PACKET_ID))
 			return;
 
-		if(channel.get().equals("CHECK_JOIN_TYPE")){
+		channel.read();
+		if(channel.get().equalsIgnoreCase("CHECK")){
 			ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 			out.writeUTF(Channel.PACKET_ID);
-			out.writeUTF("RESULT_OF_JOIN_TYPE");
+			out.writeUTF("RESULT");
 
 			channel.read();
 			out.writeUTF(channel.get());
-			out.writeUTF(String.valueOf(Bukkit.getOfflinePlayer(UUID.fromString(channel.get())).hasPlayedBefore()));
+			out.writeBoolean(Bukkit.getOfflinePlayer(UUID.fromString(channel.get())).hasPlayedBefore());
 
 			player.sendPluginMessage(this, "BungeeCord", out.toByteArray());
-		}else if(channel.get().equals("PLAY_SOUND")){
+		}else if(channel.get().equalsIgnoreCase("PLAY")){
 			channel.read();
 			Sound sound = Sound.valueOf(channel.get());
 
-			channel.read();
-			float volume = Float.valueOf(channel.get());
+			int repeat = channel.getByteArrayDataInput().readInt();
 
-			channel.read();
-			float pitch = Float.valueOf(channel.get());
+			int interval = channel.getByteArrayDataInput().readInt();
 
-			for(Player p : Bukkit.getOnlinePlayers())
-				p.playSound(p.getLocation(), sound, volume, pitch);
+			float volume = channel.getByteArrayDataInput().readFloat();
+
+			float pitch = channel.getByteArrayDataInput().readFloat();
+
+			int n = 0;
+			for(int i = repeat; i > 0; i--){
+				new BukkitRunnable(){
+					@Override
+					public void run(){
+						for(Player p : Bukkit.getOnlinePlayers())
+							p.playSound(p.getLocation(), sound, volume, pitch);
+					}
+				}.runTaskLater(this, n);
+				n += interval;
+			}
 		}
 	}
 

@@ -19,8 +19,8 @@ import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PluginMessageEvent;
-import net.md_5.bungee.api.event.ServerDisconnectEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.Listener;
@@ -47,7 +47,7 @@ public class Nucleus extends Plugin implements Listener {
 
 		load();
 
-		getProxy().registerChannel("BungeeCord");
+		getProxy().registerChannel("bungeecord:main");
 
 		getProxy().getPluginManager().registerListener(this, this);
 
@@ -96,7 +96,7 @@ public class Nucleus extends Plugin implements Listener {
 	public void onDisable(){
 		getProxy().getPluginManager().unregisterListener(this);
 
-		getProxy().unregisterChannel("BungeeCord");
+		getProxy().unregisterChannel("bungeecord:main");
 	}
 
 	public static Nucleus getPlugin(){
@@ -176,12 +176,10 @@ public class Nucleus extends Plugin implements Listener {
 				ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 				out.writeUTF(Channel.PACKET_ID);
-				out.writeUTF("CHECK_JOIN_TYPE");
+				out.writeUTF("CHECK");
 				out.writeUTF(uuid.toString());
 
-				player.sendData("BungeeCord", out.toByteArray());
-
-				//server.sendData("BungeeCord", out.toByteArray());
+				server.sendData("BungeeCord", out.toByteArray());
 			}
 
 		}, 250, TimeUnit.MILLISECONDS);
@@ -210,7 +208,7 @@ public class Nucleus extends Plugin implements Listener {
 	}
 
 	@EventHandler
-	public void onQuit(ServerDisconnectEvent e){
+	public void onQuit(PlayerDisconnectEvent e){
 		ProxiedPlayer player = e.getPlayer();
 		UUID uuid = player.getUniqueId();
 
@@ -233,19 +231,17 @@ public class Nucleus extends Plugin implements Listener {
 
 	@EventHandler
 	public void onReceive(PluginMessageEvent e){
-		System.out.println(e.getTag());
-
-		if(!e.getTag().equals("BungeeCord") && !e.getTag().equals("BungeeCord"))
+		if(!e.getTag().equalsIgnoreCase("BungeeCord") && !e.getTag().equalsIgnoreCase("bungeecord:main"))
 			return;
 
 		Channel channel = Channel.newInstance(e.getData());
 
 		channel.read();
-		if(!channel.get().equals(Channel.PACKET_ID))
+		if(!channel.get().equalsIgnoreCase(Channel.PACKET_ID))
 			return;
 
 		channel.read();
-		if(!channel.get().equals("RESULT_OF_JOIN_TYPE"))
+		if(!channel.get().equalsIgnoreCase("RESULT"))
 			return;
 
 		channel.read();
@@ -254,17 +250,14 @@ public class Nucleus extends Plugin implements Listener {
 		if(!player.isConnected())
 			return;
 
-		channel.read();
-
 		Type type = Type.NORMAL_JOIN;
-
-		if(channel.get().equals("false")){
-			type = Type.FIRST_JOIN;
-		}else if(channel.get().equals("true")){
+		if(channel.getByteArrayDataInput().readBoolean()){
 			if(cache.contains(uuid)){
 				type = Type.RE_JOIN;
 				cache.remove(uuid);
 			}
+		}else{
+			type = Type.FIRST_JOIN;
 		}
 
 		sendMessage(type, player.getName(), locs.get(uuid));
@@ -274,7 +267,10 @@ public class Nucleus extends Plugin implements Listener {
 	public void sendMessage(Type type, String playerName, String... serverNames){
 		for(ServerInfo server : getProxy().getServers().values()){
 			if(!electrons.containsKey(server.getName()))
-				return;
+				continue;
+
+			if(server.getPlayers().isEmpty())
+				continue;
 
 			Settings settings = electrons.get(server.getName()).settings.get(type);
 			if(!settings.isDisplay())
@@ -296,7 +292,10 @@ public class Nucleus extends Plugin implements Listener {
 	public void playSound(Type type){
 		for(ServerInfo server : getProxy().getServers().values()){
 			if(!electrons.containsKey(server.getName()))
-				return;
+				continue;
+
+			if(server.getPlayers().isEmpty())
+				continue;
 
 			Settings settings = electrons.get(server.getName()).settings.get(type);
 			if(!settings.isPlay())
@@ -305,25 +304,14 @@ public class Nucleus extends Plugin implements Listener {
 			ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 			out.writeUTF(Channel.PACKET_ID);
-			out.writeUTF("PLAY_SOUND");
+			out.writeUTF("PLAY");
 			out.writeUTF(settings.getSound());
-			out.writeUTF(String.valueOf(settings.getVolume()));
-			out.writeUTF(String.valueOf(settings.getPitch()));
+			out.writeInt(settings.getRepeat());
+			out.writeInt(settings.getInterval());
+			out.writeFloat(settings.getVolume());
+			out.writeFloat(settings.getPitch());
 
-			byte[] array = out.toByteArray();
-
-			int n = 0;
-			for(int i = settings.getRepeat(); i > 0; i--){
-				getProxy().getScheduler().schedule(this, new Runnable(){
-
-					@Override
-					public void run() {
-						server.sendData("BungeeCord", array);
-					}
-
-				}, n, TimeUnit.MILLISECONDS);
-				n += settings.getInterval();
-			}
+			server.sendData("BungeeCord", out.toByteArray());
 		}
 	}
 
