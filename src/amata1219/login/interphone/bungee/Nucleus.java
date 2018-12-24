@@ -60,12 +60,30 @@ public class Nucleus extends Plugin implements Listener {
 				}else if(args[0].equalsIgnoreCase("reload")){
 					load();
 
-					sender.sendMessage(new TextComponent(ChatColor.AQUA + "コンフィグをリロードしました。"));
+					loadConfig();
+
+					sender.sendMessage(new TextComponent(ChatColor.AQUA + "設定を再読み込みしました。"));
 				}
 			}
 
 		});
 
+		loadConfig();
+
+	}
+
+	@Override
+	public void onDisable(){
+		getProxy().getPluginManager().unregisterListener(this);
+
+		getProxy().unregisterChannel("bungeecord:main");
+	}
+
+	public static Nucleus getPlugin(){
+		return plugin;
+	}
+
+	public void loadConfig(){
 		File file = new File(getDataFolder() + File.separator + "config.yml");
 
 		if(!file.exists()){
@@ -90,17 +108,6 @@ public class Nucleus extends Plugin implements Listener {
 		}catch(IOException e){
 			e.printStackTrace();
 		}
-	}
-
-	@Override
-	public void onDisable(){
-		getProxy().getPluginManager().unregisterListener(this);
-
-		getProxy().unregisterChannel("bungeecord:main");
-	}
-
-	public static Nucleus getPlugin(){
-		return plugin;
 	}
 
 	public Configuration saveDefaultConfig(String path){
@@ -277,10 +284,15 @@ public class Nucleus extends Plugin implements Listener {
 				continue;
 
 			String text = Util.replaceAll(settings.getText(), "[player]", playerName);
-			if(type == Type.SWITCH)
-				text = Util.replaceAll(Util.replaceAll(text, "[from_server]", electrons.get(serverNames[0]).getAliases()), "[to_server]", electrons.get(serverNames[1]).getAliases());
-			else
-				text = Util.replaceAll(text, "[server]", electrons.get(serverNames[0]).getAliases());
+			ElectronData s1 = electrons.get(serverNames[0]);
+			if(type == Type.SWITCH){
+				ElectronData s2 = electrons.get(serverNames[1]);
+				if(s1 != null && s2 != null)
+					text = Util.replaceAll(Util.replaceAll(text, "[from_server]", electrons.get(serverNames[0]).getAliases()), "[to_server]", electrons.get(serverNames[1]).getAliases());
+			}else{
+				if(s1 != null)
+					text = Util.replaceAll(text, "[server]", electrons.get(serverNames[0]).getAliases());
+			}
 
 			TextComponent component = new TextComponent(text);
 
