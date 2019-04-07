@@ -29,7 +29,6 @@ public class Channel {
 
 	public void read(){
 		message = in.readUTF();
-		System.out.println(message);
 	}
 
 	public String get(){

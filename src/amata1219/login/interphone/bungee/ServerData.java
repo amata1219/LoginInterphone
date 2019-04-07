@@ -4,13 +4,13 @@ import java.util.HashMap;
 
 import net.md_5.bungee.config.Configuration;
 
-public class ElectronData {
+public class ServerData {
 
 	private String aliases;
 
 	public HashMap<Type, Settings> settings = new HashMap<>();
 
-	public ElectronData(Configuration config){
+	public ServerData(Configuration config){
 		aliases = config.getString("Aliases");
 
 		settings.put(Type.FIRST_JOIN, new Settings(Type.FIRST_JOIN, config));

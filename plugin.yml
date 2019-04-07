@@ -1,4 +1,5 @@
 name: LoginInterphone
-main: amata1219.login.interphone.spigot.Electron
-version: 3.0.0
+main: amata1219.login.interphone.spigot.Main
+version: 3.1.0
+softdepend: [MCBans]
 author: amata1219(Twitter@amata1219)

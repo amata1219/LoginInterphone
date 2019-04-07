@@ -3,6 +3,7 @@ package amata1219.login.interphone.spigot;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -10,6 +11,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -19,13 +21,19 @@ import com.google.common.io.ByteStreams;
 
 import amata1219.login.interphone.bungee.Channel;
 
-public class Electron extends JavaPlugin implements Listener, PluginMessageListener {
+public class Main extends JavaPlugin implements Listener, PluginMessageListener {
 
-	private static Electron plugin;
+	private static Main plugin;
+
+	private MCBansBridge bridge;
 
 	@Override
 	public void onEnable(){
 		plugin = this;
+
+		Plugin mcbans = getServer().getPluginManager().getPlugin("MCBans");
+		if(mcbans != null)
+			bridge = MCBansBridge.load(mcbans);
 
 		getServer().getPluginManager().registerEvents(this, this);
 
@@ -41,7 +49,7 @@ public class Electron extends JavaPlugin implements Listener, PluginMessageListe
 		getServer().getMessenger().unregisterIncomingPluginChannel(this, "BungeeCord", this);
 	}
 
-	public static Electron getPlugin(){
+	public static Main getPlugin(){
 		return plugin;
 	}
 
@@ -75,9 +83,16 @@ public class Electron extends JavaPlugin implements Listener, PluginMessageListe
 
 			channel.read();
 			out.writeUTF(channel.get());
-			out.writeBoolean(Bukkit.getOfflinePlayer(UUID.fromString(channel.get())).hasPlayedBefore());
 
+			UUID uuid = UUID.fromString(channel.get());
+			OfflinePlayer plyr = Bukkit.getOfflinePlayer(uuid);
+			boolean played = plyr.hasPlayedBefore();
+
+			out.writeBoolean(played);
 			player.sendPluginMessage(this, "BungeeCord", out.toByteArray());
+
+			boolean isban = bridge == null || !played ? false : !bridge.isExist(plyr.getName());
+			out.writeBoolean(isban);
 		}else if(channel.get().equalsIgnoreCase("PLAY")){
 			channel.read();
 			Sound sound = Sound.valueOf(channel.get());

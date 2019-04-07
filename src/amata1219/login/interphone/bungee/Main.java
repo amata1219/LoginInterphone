@@ -31,11 +31,11 @@ import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-public class Nucleus extends Plugin implements Listener {
+public class Main extends Plugin implements Listener {
 
-	private static Nucleus plugin;
+	private static Main plugin;
 
-	public HashMap<String, ElectronData> electrons = new HashMap<>();
+	public HashMap<String, ServerData> electrons = new HashMap<>();
 
 	private int rejoin = 15;
 
@@ -56,7 +56,7 @@ public class Nucleus extends Plugin implements Listener {
 			@Override
 			public void execute(CommandSender sender, String[] args) {
 				if(args.length == 0){
-					sender.sendMessage(new TextComponent(ChatColor.AQUA + "LoginInterphone v" + Nucleus.getPlugin().getDescription().getVersion()));
+					sender.sendMessage(new TextComponent(ChatColor.AQUA + "LoginInterphone v" + Main.getPlugin().getDescription().getVersion()));
 				}else if(args[0].equalsIgnoreCase("reload")){
 					load();
 
@@ -79,7 +79,7 @@ public class Nucleus extends Plugin implements Listener {
 		getProxy().unregisterChannel("bungeecord:main");
 	}
 
-	public static Nucleus getPlugin(){
+	public static Main getPlugin(){
 		return plugin;
 	}
 
@@ -152,7 +152,7 @@ public class Nucleus extends Plugin implements Listener {
 			if(!name.endsWith(".yml"))
 				continue;
 
-			electrons.put(name.substring(0, name.length() - 4), new ElectronData(saveDefaultConfig(getDataFolder() + File.separator + "Servers" + File.separator + name)));
+			electrons.put(name.substring(0, name.length() - 4), new ServerData(saveDefaultConfig(getDataFolder() + File.separator + "Servers" + File.separator + name)));
 		}
 	}
 
@@ -267,6 +267,10 @@ public class Nucleus extends Plugin implements Listener {
 			type = Type.FIRST_JOIN;
 		}
 
+		boolean isban = channel.getByteArrayDataInput().readBoolean();
+		if(isban)
+			return;
+
 		sendMessage(type, player.getName(), locs.get(uuid));
 		playSound(type);
 	}
@@ -284,9 +288,9 @@ public class Nucleus extends Plugin implements Listener {
 				continue;
 
 			String text = Util.replaceAll(settings.getText(), "[player]", playerName);
-			ElectronData s1 = electrons.get(serverNames[0]);
+			ServerData s1 = electrons.get(serverNames[0]);
 			if(type == Type.SWITCH){
-				ElectronData s2 = electrons.get(serverNames[1]);
+				ServerData s2 = electrons.get(serverNames[1]);
 				if(s1 != null && s2 != null)
 					text = Util.replaceAll(Util.replaceAll(text, "[from_server]", electrons.get(serverNames[0]).getAliases()), "[to_server]", electrons.get(serverNames[1]).getAliases());
 			}else{
