@@ -89,10 +89,10 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 			boolean played = plyr.hasPlayedBefore();
 
 			out.writeBoolean(played);
-			player.sendPluginMessage(this, "BungeeCord", out.toByteArray());
-
 			boolean isban = bridge == null || !played ? false : !bridge.isExist(plyr.getName());
 			out.writeBoolean(isban);
+
+			player.sendPluginMessage(this, "BungeeCord", out.toByteArray());
 		}else if(channel.get().equalsIgnoreCase("PLAY")){
 			channel.read();
 			Sound sound = Sound.valueOf(channel.get());
