@@ -13,8 +13,8 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
-import amata1219.login.interphone.Util;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -38,6 +38,7 @@ public class Main extends Plugin implements Listener {
 	public HashMap<String, ServerData> electrons = new HashMap<>();
 
 	private int rejoin = 15;
+	private boolean actionBarMessage = false;
 
 	@Override
 	public void onEnable(){
@@ -104,7 +105,9 @@ public class Main extends Plugin implements Listener {
 		}
 
 		try{
-           rejoin = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file).getInt("ReJoin");
+			Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+           rejoin = config.getInt("ReJoin");
+           actionBarMessage = config.getBoolean("ActionBarMessage");
 		}catch(IOException e){
 			e.printStackTrace();
 		}
@@ -287,21 +290,24 @@ public class Main extends Plugin implements Listener {
 			if(!settings.isDisplay())
 				continue;
 
-			String text = Util.replaceAll(settings.getText(), "[player]", playerName);
+			String text = settings.getText().replace("[player]", playerName);
+			//Util.replaceAll~
 			ServerData s1 = electrons.get(serverNames[0]);
 			if(type == Type.SWITCH){
 				ServerData s2 = electrons.get(serverNames[1]);
 				if(s1 != null && s2 != null)
-					text = Util.replaceAll(Util.replaceAll(text, "[from_server]", electrons.get(serverNames[0]).getAliases()), "[to_server]", electrons.get(serverNames[1]).getAliases());
+					text = text.replace("[from_server]", electrons.get(serverNames[0]).getAliases()).replace("[to_server]", electrons.get(serverNames[1]).getAliases());
+					//text = Util.replaceAll(Util.replaceAll(text, "[from_server]", electrons.get(serverNames[0]).getAliases()), "[to_server]", electrons.get(serverNames[1]).getAliases());
 			}else{
-				if(s1 != null)
-					text = Util.replaceAll(text, "[server]", electrons.get(serverNames[0]).getAliases());
+				if(s1 != null) text = text.replace("[server]", electrons.get(serverNames[0]).getAliases());
+					//text = Util.replaceAll(text, "[server]", electrons.get(serverNames[0]).getAliases());
 			}
 
 			TextComponent component = new TextComponent(text);
+			ChatMessageType messageType = actionBarMessage ? ChatMessageType.ACTION_BAR : ChatMessageType.CHAT;
 
 			for(ProxiedPlayer player : server.getPlayers())
-				player.sendMessage(component);
+				player.sendMessage(messageType, component);
 		}
 	}
 
