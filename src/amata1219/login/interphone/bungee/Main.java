@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
@@ -25,6 +26,8 @@ import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.api.scheduler.ScheduledTask;
+import net.md_5.bungee.api.scheduler.TaskScheduler;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
@@ -34,11 +37,13 @@ import net.md_5.bungee.event.EventPriority;
 public class Main extends Plugin implements Listener {
 
 	private static Main plugin;
+	private static final TextComponent EMPTY_COMPONENT = new TextComponent(" ");
 
 	public HashMap<String, ServerData> electrons = new HashMap<>();
 
 	private int rejoin = 15;
-	private boolean actionBarMessage = false;
+	private boolean actionBarMessageEnable = false;
+	private int actionBarMessageDuration = 5;
 
 	@Override
 	public void onEnable(){
@@ -107,7 +112,8 @@ public class Main extends Plugin implements Listener {
 		try{
 			Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
            rejoin = config.getInt("ReJoin");
-           actionBarMessage = config.getBoolean("ActionBarMessage");
+           actionBarMessageEnable = config.getBoolean("ActionBarMessage.Enable");
+           actionBarMessageDuration = config.getInt("ActionBarMessage.Duration");
 		}catch(IOException e){
 			e.printStackTrace();
 		}
@@ -304,10 +310,50 @@ public class Main extends Plugin implements Listener {
 			}
 
 			TextComponent component = new TextComponent(text);
-			ChatMessageType messageType = actionBarMessage ? ChatMessageType.ACTION_BAR : ChatMessageType.CHAT;
 
-			for(ProxiedPlayer player : server.getPlayers())
-				player.sendMessage(messageType, component);
+			//メッセージをアクションバーに表示する場合
+			if(actionBarMessageEnable){
+				TaskScheduler scheduler = getProxy().getScheduler();
+
+				//何回メッセージを表示したか
+				AtomicInteger count = new AtomicInteger();
+
+				TaskHolder holder = new TaskHolder();
+
+				//遅延無し、1秒毎に繰り返す
+				holder.setTask(scheduler.schedule(this, new Runnable(){
+
+					@Override
+					public void run() {
+						for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(ChatMessageType.ACTION_BAR, component);
+
+						//指定秒数だけ表示した場合
+						if(count.incrementAndGet() >= actionBarMessageDuration){
+
+							//秒数が偶数であればキャンセルする
+							if(actionBarMessageDuration % 2 == 0){
+								holder.cancelTask();
+								return;
+							}
+
+							//秒数が奇数であれば1秒後に空のメッセージを送信した上でキャンセルする
+							scheduler.schedule(Main.plugin, new Runnable(){
+
+								@Override
+								public void run() {
+									for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(ChatMessageType.ACTION_BAR, EMPTY_COMPONENT);
+									holder.cancelTask();
+								}
+
+							}, 1, TimeUnit.SECONDS);
+						}
+					}
+
+				}, 0, 1, TimeUnit.SECONDS));
+
+			}else{
+				for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(component);
+			}
 		}
 	}
 
@@ -335,6 +381,20 @@ public class Main extends Plugin implements Listener {
 
 			server.sendData("BungeeCord", out.toByteArray());
 		}
+	}
+
+	private static class TaskHolder {
+
+		private ScheduledTask task;
+
+		public void setTask(ScheduledTask task){
+			this.task = task;
+		}
+
+		public void cancelTask(){
+			if(task != null) task.cancel();
+		}
+
 	}
 
 }

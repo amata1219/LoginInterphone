@@ -1,2 +1,4 @@
 ReJoin: 15
-ActionBarMessage: true
+ActionBarMessage:
+  Enable: true
+  Duration: 5
