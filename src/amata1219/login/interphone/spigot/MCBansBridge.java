@@ -17,9 +17,15 @@ public class MCBansBridge {
 	private MCBansBridge(){
 
 	}
-
-	public boolean isExist(String name){
-		return PlayerListener.cache.getIfPresent(name.toLowerCase()) != null;
+	
+	public boolean isBanned(String name){
+		if(MCBans.getInstance().apiServer == null) return false;
+		
+		String ex = PlayerListener.cache.getIfPresent(name.toLowerCase());
+		if(ex == null) return false;
+		
+		String[] s = ex.split(";");
+		return s.length >= 5 && "lgtis".contains(s[0]);
 	}
 
 }

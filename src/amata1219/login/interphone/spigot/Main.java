@@ -86,10 +86,8 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 
 			UUID uuid = UUID.fromString(channel.get());
 			OfflinePlayer plyr = Bukkit.getOfflinePlayer(uuid);
-			boolean played = plyr.hasPlayedBefore();
-
-			out.writeBoolean(played);
-			boolean isban = bridge == null || !played ? false : !bridge.isExist(plyr.getName());
+			out.writeBoolean(plyr.hasPlayedBefore());
+			boolean isban = bridge == null ? false : bridge.isBanned(plyr.getName());
 			out.writeBoolean(isban);
 
 			player.sendPluginMessage(this, "BungeeCord", out.toByteArray());
