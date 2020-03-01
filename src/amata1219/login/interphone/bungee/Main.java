@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -14,9 +15,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
+import amata1219.login.interphone.bungee.setting.EventActionSetting;
+import amata1219.login.interphone.bungee.setting.EventActionSetting.EventType;
+import amata1219.login.interphone.bungee.setting.MessageDisplaySetting;
+import amata1219.login.interphone.bungee.setting.MessageDisplaySetting.DisplayType;
+import amata1219.login.interphone.bungee.setting.ServerSetting;
+import amata1219.login.interphone.bungee.setting.ServerSettingLoading;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -26,6 +34,7 @@ import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.api.plugin.PluginManager;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
 import net.md_5.bungee.api.scheduler.TaskScheduler;
 import net.md_5.bungee.config.Configuration;
@@ -39,11 +48,14 @@ public class Main extends Plugin implements Listener {
 	private static Main plugin;
 	private static final TextComponent EMPTY_COMPONENT = new TextComponent(" ");
 
+	private final ProxyServer proxy = getProxy();
+	public final HashMap<String, ServerSetting> settings = new HashMap<>();
+	
 	public HashMap<String, ServerData> electrons = new HashMap<>();
 
 	private int rejoin = 15;
-	private boolean actionBarMessageEnable = false;
-	private int actionBarMessageDuration = 5;
+	//private boolean actionBarMessageEnable = false;
+	//private int actionBarMessageDuration = 5;
 
 	@Override
 	public void onEnable(){
@@ -51,14 +63,16 @@ public class Main extends Plugin implements Listener {
 
 		saveDefaultConfig(getDataFolder() + File.separator + "template.yml");
 
-		load();
+		loadServerSettings();
 
-		getProxy().registerChannel("bungeecord:main");
+		proxy.registerChannel("bungeecord:main");
 
-		getProxy().getPluginManager().registerListener(this, this);
+		PluginManager pm = proxy.getPluginManager();
+		pm.registerListener(this, this);
+		pm.registerCommand(this, new Command("logininterphone", "login.interphone.logininterphone"){
 
-		getProxy().getPluginManager().registerCommand(this, new Command("logininterphone", "login.interphone.logininterphone"){
-
+			
+		//ちゃんとコマンドクラスを作る
 			@Override
 			public void execute(CommandSender sender, String[] args) {
 				if(args.length == 0){
@@ -75,13 +89,11 @@ public class Main extends Plugin implements Listener {
 		});
 
 		loadConfig();
-
 	}
 
 	@Override
 	public void onDisable(){
 		getProxy().getPluginManager().unregisterListener(this);
-
 		getProxy().unregisterChannel("bungeecord:main");
 	}
 
@@ -149,7 +161,7 @@ public class Main extends Plugin implements Listener {
 		return null;
 	}
 
-	public void load(){
+	/*public void load(){
 		electrons.clear();
 
 		File directory = new File(getDataFolder() + File.separator + "Servers");
@@ -163,14 +175,32 @@ public class Main extends Plugin implements Listener {
 
 			electrons.put(name.substring(0, name.length() - 4), new ServerData(saveDefaultConfig(getDataFolder() + File.separator + "Servers" + File.separator + name)));
 		}
+	}*/
+	
+	public void loadServerSettings(){
+		settings.clear();
+		
+		String path = getDataFolder() + File.separator + "Servers";
+		File directory = new File(path);
+		if(!directory.exists()) directory.mkdir();
+		
+		for(File file : directory.listFiles()){
+			String name = file.getName();
+			if(!name.endsWith(".yml")) continue;
+			
+			Configuration config = saveDefaultConfig(path + File.separator + name);
+			
+			ServerSetting setting = ServerSettingLoading.load(config);
+			settings.put(name.substring(0, name.length() - 4), setting);
+		}
 	}
 
-	public String get(String[] args, int index){
+	/*public String get(String[] args, int index){
 		if(args.length <= index)
 			return "";
 		else
 			return args[index];
-	}
+	}*/
 
 	private HashMap<UUID, String> locs = new HashMap<>();
 	private Set<UUID> cache = new HashSet<>();
@@ -182,7 +212,7 @@ public class Main extends Plugin implements Listener {
 		if(locs.containsKey(uuid))
 			return;
 
-		getProxy().getScheduler().schedule(this, new Runnable(){
+		proxy.getScheduler().schedule(this, new Runnable(){
 
 			@Override
 			public void run() {
@@ -283,7 +313,44 @@ public class Main extends Plugin implements Listener {
 		sendMessage(type, player.getName(), locs.get(uuid));
 		playSound(type);
 	}
-
+	
+	public void displayMessage(EventType event, String playerName, String currentServerName, String previousServerName){
+		for(ServerInfo server : proxy.getServers().values()){
+			String serverName = server.getName();
+			if(!settings.containsKey(serverName) || server.getPlayers().isEmpty()) continue;
+			
+			EventActionSetting eas = settings.get(serverName).eass.get(event);
+			String text = eas.text.replace("[player]", playerName);
+			
+			for(Entry<DisplayType, MessageDisplaySetting> entry : eas.mdss.entrySet()){
+				MessageDisplaySetting mds = entry.getValue();
+				if(!mds.displayable) continue;
+				
+				ServerSetting currentServerSetting = settings.get(currentServerName);
+				if(event == EventType.SWITCH){
+					ServerSetting previousServerSetting = settings.get(previousServerName);
+					text = text.replace("[from_server]", previousServerSetting != null ? previousServerSetting.alias : "missing")
+							.replace("[to_server]", currentServerSetting != null ? currentServerSetting.alias : "missing");
+				}else{
+					text = text.replace("[server]", currentServerSetting != null ? currentServerSetting.alias : "missing");
+				}
+				
+				TextComponent component = new TextComponent(text);
+				
+				switch(entry.getKey()){
+				case CHAT:{
+					
+				}case ACTION_BAR:{
+					
+				}case TITLE:{
+					
+				}default:
+					break;
+				}
+			}
+		}
+	}
+	
 	public void sendMessage(Type type, String playerName, String... serverNames){
 		for(ServerInfo server : getProxy().getServers().values()){
 			if(!electrons.containsKey(server.getName()))
@@ -297,16 +364,13 @@ public class Main extends Plugin implements Listener {
 				continue;
 
 			String text = settings.getText().replace("[player]", playerName);
-			//Util.replaceAll~
 			ServerData s1 = electrons.get(serverNames[0]);
 			if(type == Type.SWITCH){
 				ServerData s2 = electrons.get(serverNames[1]);
 				if(s1 != null && s2 != null)
 					text = text.replace("[from_server]", electrons.get(serverNames[0]).getAliases()).replace("[to_server]", electrons.get(serverNames[1]).getAliases());
-					//text = Util.replaceAll(Util.replaceAll(text, "[from_server]", electrons.get(serverNames[0]).getAliases()), "[to_server]", electrons.get(serverNames[1]).getAliases());
 			}else{
 				if(s1 != null) text = text.replace("[server]", electrons.get(serverNames[0]).getAliases());
-					//text = Util.replaceAll(text, "[server]", electrons.get(serverNames[0]).getAliases());
 			}
 
 			TextComponent component = new TextComponent(text);

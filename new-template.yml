@@ -1,0 +1,19 @@
+Alias: "main"
+FirstJoin:
+  Message:
+    Text: '&d[player] joined [server] in for the first time!'
+    Chat:
+      Displayable: true
+    ActionBar:
+      Displayable: true
+      Duration: 5
+    Title:
+      Displayable: false
+      Duration: 5
+  Sound:
+    Playable: true
+    Name: 'BLOCK_COMPARATOR_CLICK'
+    Volume: 1.0
+    Pitch: 1.0
+    Repeatitons: 5
+    Interval: 0.75
