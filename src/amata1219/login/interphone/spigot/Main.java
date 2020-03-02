@@ -12,10 +12,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
@@ -25,28 +28,31 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 
 	private static Main plugin;
 
-	private MCBansBridge bridge;
+	private MCBansBridge mcbans;
 
 	@Override
 	public void onEnable(){
 		plugin = this;
+		
+		PluginManager pm = getServer().getPluginManager();
 
-		Plugin mcbans = getServer().getPluginManager().getPlugin("MCBans");
-		if(mcbans != null)
-			bridge = MCBansBridge.load(mcbans);
+		Plugin maybeMCBans = pm.getPlugin("MCBans");
+		if(maybeMCBans != null) mcbans = MCBansBridge.load(maybeMCBans);
 
-		getServer().getPluginManager().registerEvents(this, this);
+		pm.registerEvents(this, this);
 
-		getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-		getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
+		Messenger messenger = getServer().getMessenger();
+		messenger.registerOutgoingPluginChannel(this, "BungeeCord");
+		messenger.registerIncomingPluginChannel(this, "BungeeCord", this);
 	}
 
 	@Override
 	public void onDisable(){
 		HandlerList.unregisterAll((JavaPlugin) this);
 
-		getServer().getMessenger().unregisterOutgoingPluginChannel(this, "BungeeCord");
-		getServer().getMessenger().unregisterIncomingPluginChannel(this, "BungeeCord", this);
+		Messenger messenger = getServer().getMessenger();
+		messenger.unregisterOutgoingPluginChannel(this, "BungeeCord");
+		messenger.unregisterIncomingPluginChannel(this, "BungeeCord", this);
 	}
 
 	public static Main getPlugin(){
@@ -64,52 +70,42 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 	}
 
 	@Override
-	public void onPluginMessageReceived(String tag, Player player, byte[] data) {
-		if(!tag.equalsIgnoreCase("BungeeCord") && !tag.equalsIgnoreCase("bungeecord:main"))
-			return;
+	public void onPluginMessageReceived(String tag, Player repeater, byte[] data) {
+		if(!tag.equalsIgnoreCase("BungeeCord") && !tag.equalsIgnoreCase("bungeecord:main")) return;
 
-		Channel channel = Channel.newInstance(data);
+		ByteArrayDataInput in = ByteStreams.newDataInput(data);
+		Channel channel = Channel.newInstance(in);
 
-		channel.read();
-		if(!channel.get().equalsIgnoreCase(Channel.PACKET_ID))
-			return;
+		if(!channel.read().equalsIgnoreCase(Channel.PACKET_ID)) return;
 
-		channel.read();
-		if(channel.get().equalsIgnoreCase("CHECK")){
+		if(channel.read().equalsIgnoreCase("CHECK")){
 			ByteArrayDataOutput out = ByteStreams.newDataOutput();
 
 			out.writeUTF(Channel.PACKET_ID);
 			out.writeUTF("RESULT");
+			out.writeUTF(channel.read());
 
-			channel.read();
-			out.writeUTF(channel.get());
+			UUID uuid = UUID.fromString(channel.current());
+			OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
+			
+			out.writeBoolean(player.hasPlayedBefore());
+			
+			boolean isBanned = mcbans == null ? false : mcbans.isBanned(player.getName());
+			out.writeBoolean(isBanned);
 
-			UUID uuid = UUID.fromString(channel.get());
-			OfflinePlayer plyr = Bukkit.getOfflinePlayer(uuid);
-			out.writeBoolean(plyr.hasPlayedBefore());
-			boolean isban = bridge == null ? false : bridge.isBanned(plyr.getName());
-			out.writeBoolean(isban);
+			repeater.sendPluginMessage(this, "BungeeCord", out.toByteArray());
+		}else if(channel.current().equalsIgnoreCase("PLAY")){
+			Sound sound = Sound.valueOf(channel.read());
 
-			player.sendPluginMessage(this, "BungeeCord", out.toByteArray());
-		}else if(channel.get().equalsIgnoreCase("PLAY")){
-			channel.read();
-			Sound sound = Sound.valueOf(channel.get());
-
-			int repeat = channel.getByteArrayDataInput().readInt();
-
-			int interval = channel.getByteArrayDataInput().readInt();
-
-			float volume = channel.getByteArrayDataInput().readFloat();
-
-			float pitch = channel.getByteArrayDataInput().readFloat();
+			int repeatitons = in.readInt(), interval = in.readInt();
+			float volume = in.readFloat(), pitch = in.readFloat();
 
 			int n = 0;
-			for(int i = repeat; i > 0; i--){
+			for(int i = repeatitons; i > 0; i--){
 				new BukkitRunnable(){
 					@Override
 					public void run(){
-						for(Player p : Bukkit.getOnlinePlayers())
-							p.playSound(p.getLocation(), sound, volume, pitch);
+						for(Player player : Bukkit.getOnlinePlayers()) player.playSound(player.getLocation(), sound, volume, pitch);
 					}
 				}.runTaskLater(this, n);
 				n += interval;
