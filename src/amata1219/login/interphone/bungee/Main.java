@@ -49,7 +49,7 @@ public class Main extends Plugin implements Listener {
 	private final ProxyServer proxy = getProxy();
 	private final HashMap<String, ServerSetting> settings = new HashMap<>();
 	
-	private int rejoin = 15;
+	private int rejoin = 60;
 
 	@Override
 	public void onEnable(){
@@ -101,7 +101,7 @@ public class Main extends Plugin implements Listener {
 
 		try{
 			Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
-			rejoin = config.getInt("ReJoin");
+			rejoin = config.getInt("Time to be rejoined");
 		}catch(IOException e){
 			e.printStackTrace();
 		}
@@ -223,6 +223,7 @@ public class Main extends Plugin implements Listener {
 		Channel channel = Channel.newInstance(in);
 
 		if(!channel.read().equalsIgnoreCase(Channel.PACKET_ID)) return;
+		
 		if(!channel.read().equalsIgnoreCase("RESULT")) return;
 
 		UUID uuid = UUID.fromString(channel.read());
@@ -303,78 +304,6 @@ public class Main extends Plugin implements Listener {
 			}
 		}
 	}
-	
-	/*public void sendMessage(Type type, String playerName, String... serverNames){
-		for(ServerInfo server : getProxy().getServers().values()){
-			if(!electrons.containsKey(server.getName()))
-				continue;
-
-			if(server.getPlayers().isEmpty())
-				continue;
-
-			Settings settings = electrons.get(server.getName()).settings.get(type);
-			if(!settings.isDisplay())
-				continue;
-
-			String text = settings.getText().replace("[player]", playerName);
-			ServerData s1 = electrons.get(serverNames[0]);
-			if(type == Type.SWITCH){
-				ServerData s2 = electrons.get(serverNames[1]);
-				if(s1 != null && s2 != null)
-					text = text.replace("[from_server]", electrons.get(serverNames[0]).getAliases()).replace("[to_server]", electrons.get(serverNames[1]).getAliases());
-			}else{
-				if(s1 != null) text = text.replace("[server]", electrons.get(serverNames[0]).getAliases());
-			}
-
-			TextComponent component = new TextComponent(text);
-
-			//メッセージをアクションバーに表示する場合
-			if(actionBarMessageEnable){
-				TaskScheduler scheduler = getProxy().getScheduler();
-				
-				scheduler.schedule(paramPlugin, paramRunnable, paramLong1, paramLong2, paramTimeUnit)
-
-				//何回メッセージを表示したか
-				AtomicInteger count = new AtomicInteger();
-
-				TaskHolder holder = new TaskHolder();
-
-				//遅延無し、1秒毎に繰り返す
-				holder.setTask(scheduler.schedule(this, new Runnable(){
-
-					@Override
-					public void run() {
-						for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(ChatMessageType.ACTION_BAR, component);
-
-						//指定秒数だけ表示した場合
-						if(count.incrementAndGet() >= actionBarMessageDuration){
-
-							//秒数が偶数であればキャンセルする
-							if(actionBarMessageDuration % 2 == 0){
-								holder.cancelTask();
-								return;
-							}
-
-							//秒数が奇数であれば1秒後に空のメッセージを送信した上でキャンセルする
-							scheduler.schedule(Main.plugin, new Runnable(){
-
-								@Override
-								public void run() {
-									for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(ChatMessageType.ACTION_BAR, EMPTY_COMPONENT);
-									holder.cancelTask();
-								}
-
-							}, 1, TimeUnit.SECONDS);
-						}
-					}
-
-				}, 0, 1, TimeUnit.SECONDS));
-
-			}else{
-				for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(component);
-			}
-		}
-	}*/
 
 	private void playSound(EventType event){
 		for(ServerInfo server : getProxy().getServers().values()){

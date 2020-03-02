@@ -1,56 +1,91 @@
-Aliases: 'main'
+Alias: 'main'
 FirstJoin:
   Message:
-    Display: true
-    Text: '&d[player] joined [server] in for the first time!'
+    Text: '&e[player] さんは &d&l*サーバーに初参加*&eです！'
+    Chat:
+      Displayable: true
+    ActionBar:
+      Displayable: true
+      Duration: 8
+    Title:
+      Displayable: false
+      Duration: 8
   Sound:
-    Play: true
-    Type: 'BLOCK_COMPARATOR_CLICK'
+    Playable: true
+    Name: 'ENTITY_PLAYER_LEVELUP'
     Volume: 1.0
     Pitch: 1.0
-    Repeat: 5
-    Interval: 0.75
-NormalJoin:
+    Repetitions: 2
+    Interval: 0.05
+Join:
   Message:
-    Display: true
-    Text: '&b[player] joined [server]'
+    Text: '&e[player] さんが&b&lログイン&eしました！〔[server]〕'
+    Chat:
+      Displayable: true
+    ActionBar:
+      Displayable: true
+      Duration: 8
+    Title:
+      Displayable: false
+      Duration: 8
   Sound:
-    Play: true
-    Type: 'BLOCK_COMPARATOR_CLICK'
+    Playable: true
+    Name: 'ENTITY_EXPERIENCE_ORB_PICKUP'
     Volume: 1.0
     Pitch: 1.0
-    Repeat: 5
+    Repetitions: 1
     Interval: 0.75
-ReJoin:
+Rejoin:
   Message:
-    Display: true
-    Text: '&b[player] rejoined [server]'
+    Text: '&e[player] さんが戻ってきました！〔[server]〕'
+    Chat:
+      Displayable: true
+    ActionBar:
+      Displayable: true
+      Duration: 8
+    Title:
+      Displayable: false
+      Duration: 8
   Sound:
-    Play: true
-    Type: 'BLOCK_COMPARATOR_CLICK'
+    Playable: true
+    Name: 'BLOCK_COMPARATOR_CLICK'
     Volume: 1.0
     Pitch: 1.0
-    Repeat: 5
+    Repetitions: 1
     Interval: 0.75
 Switch:
   Message:
-    Display: true
-    Text: '&b[player] switched from [from_server] to [to_server]'
+    Text: '&e[player] さんが移動しました！〔[from_server] >> [to_server]〕'
+    Chat:
+      Displayable: true
+    ActionBar:
+      Displayable: true
+      Duration: 8
+    Title:
+      Displayable: false
+      Duration: 8
   Sound:
-    Play: true
-    Type: 'BLOCK_COMPARATOR_CLICK'
+    Playable: false
+    Name: 'BLOCK_COMPARATOR_CLICK'
     Volume: 1.0
     Pitch: 1.0
-    Repeat: 5
+    Repetitions: 1
     Interval: 0.75
 Quit:
   Message:
-    Display: true
-    Text: '&b[player] left [server]'
+    Text: '&e[player] さんが&d&lログアウト&eしました！〔[server]〕'
+    Chat:
+      Displayable: true
+    ActionBar:
+      Displayable: true
+      Duration: 8
+    Title:
+      Displayable: false
+      Duration: 8
   Sound:
-    Play: true
-    Type: 'BLOCK_COMPARATOR_CLICK'
+    Playable: true
+    Name: 'BLOCK_COMPARATOR_CLICK'
     Volume: 1.0
     Pitch: 1.0
-    Repeat: 5
+    Repetitions: 1
     Interval: 0.75

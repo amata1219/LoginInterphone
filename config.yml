@@ -1,6 +1,1 @@
-ReJoin: 15
-ActionBarMessage:
-  Enable: true
-  #アクションバー上にメッセージを表示するかどうか(trueで有効、falseで無効)
-  Duration: 5
-  #メッセージの滞在時間
+'Time to be rejoined': 60
