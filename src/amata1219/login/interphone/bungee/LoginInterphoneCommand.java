@@ -16,7 +16,7 @@ public class LoginInterphoneCommand extends Command {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if(args.length == 0){
-			String version = Main.getPlugin().getDescription().getVersion();
+			String version = plugin.getDescription().getVersion();
 			TextComponent message = new TextComponent(ChatColor.AQUA + "LoginInterphone v" + version);
 			sender.sendMessage(message);
 		}else if(args[0].equalsIgnoreCase("reload")){

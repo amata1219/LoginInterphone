@@ -5,6 +5,7 @@ import java.util.Map;
 
 import amata1219.login.interphone.bungee.setting.EventActionSetting.EventType;
 import amata1219.login.interphone.bungee.setting.MessageDisplaySetting.DisplayType;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.config.Configuration;
 
 public class ServerSettingLoading {
@@ -14,12 +15,12 @@ public class ServerSettingLoading {
 		
 		for(EventType event : EventType.values()){
 			
-			String text = config.getString(event.name() + ".Message.Text");
+			String text = color(config.getString(event.name + ".Message.Text"));
 			Map<DisplayType, MessageDisplaySetting> mdss = new HashMap<>();
 			
 			for(DisplayType display : DisplayType.values()){
 				
-				Configuration section = config.getSection(event.name() + ".Message." + display.name());
+				Configuration section = config.getSection(event.name + ".Message." + display.name);
 				
 				MessageDisplaySetting mds = new MessageDisplaySetting(
 					section.getBoolean("Displayable"),
@@ -29,7 +30,7 @@ public class ServerSettingLoading {
 				mdss.put(display, mds);
 			}
 			
-			Configuration section = config.getSection(event.name() + ".Sound");
+			Configuration section = config.getSection(event.name + ".Sound");
 			
 			SoundPlaySetting sps = new SoundPlaySetting(
 				section.getString("Name"),
@@ -45,7 +46,11 @@ public class ServerSettingLoading {
 			eass.put(event, eas);
 		}
 		
-		return new ServerSetting(config.getString("Alias"), eass);
+		return new ServerSetting(color(config.getString("Alias")), eass);
+	}
+	
+	private static String color(String text){
+		return ChatColor.translateAlternateColorCodes('&', text);
 	}
 
 }

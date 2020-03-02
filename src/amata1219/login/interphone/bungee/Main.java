@@ -23,7 +23,6 @@ import amata1219.login.interphone.bungee.setting.ServerSetting;
 import amata1219.login.interphone.bungee.setting.ServerSettingLoading;
 import amata1219.login.interphone.bungee.setting.SoundPlaySetting;
 import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.Title;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -46,7 +45,6 @@ public class Main extends Plugin implements Listener {
 	private static Main plugin;
 	private static final TextComponent EMPTY_COMPONENT = new TextComponent(" ");
 
-	private final ProxyServer proxy = getProxy();
 	private final HashMap<String, ServerSetting> settings = new HashMap<>();
 	
 	private int rejoin = 60;
@@ -54,14 +52,14 @@ public class Main extends Plugin implements Listener {
 	@Override
 	public void onEnable(){
 		plugin = this;
-
+		
 		saveDefaultConfig(folder() + File.separator + "template.yml");
 
 		loadServerSettings();
 
-		proxy.registerChannel("bungeecord:main");
+		getProxy().registerChannel("bungeecord:main");
 
-		PluginManager pm = proxy.getPluginManager();
+		PluginManager pm = getProxy().getPluginManager();
 		pm.registerCommand(this, new LoginInterphoneCommand());
 		pm.registerListener(this, this);
 
@@ -70,8 +68,8 @@ public class Main extends Plugin implements Listener {
 
 	@Override
 	public void onDisable(){
-		proxy.getPluginManager().unregisterListener(this);
-		proxy.unregisterChannel("bungeecord:main");
+		getProxy().getPluginManager().unregisterListener(this);
+		getProxy().unregisterChannel("bungeecord:main");
 	}
 
 	public static Main getPlugin(){
@@ -158,7 +156,7 @@ public class Main extends Plugin implements Listener {
 
 	private final HashMap<UUID, String> currentServer = new HashMap<>();
 	private final Set<UUID> playersWhoHasJustQuitted = new HashSet<>();
-
+	
 	@EventHandler
 	public void onJoin(ServerSwitchEvent event){
 		ProxiedPlayer player = event.getPlayer();
@@ -187,7 +185,7 @@ public class Main extends Plugin implements Listener {
 		
 		if(!currentServer.containsKey(uuid)) return;
 
-		schedule(1000, TimeUnit.MILLISECONDS, () -> {
+		schedule(1, TimeUnit.SECONDS, () -> {
 			String serverName = player.getServer().getInfo().getName();
 
 			displayMessage(EventType.SWITCH, player.getName(), serverName, currentServer.get(uuid));
@@ -196,7 +194,6 @@ public class Main extends Plugin implements Listener {
 			currentServer.put(uuid, serverName);
 		});
 	}
-	
 
 	@EventHandler
 	public void onQuit(PlayerDisconnectEvent e){
@@ -231,8 +228,8 @@ public class Main extends Plugin implements Listener {
 		
 		if(!player.isConnected()) return;
 
-		boolean isFirstJoining = in.readBoolean();
-		EventType type = isFirstJoining ? EventType.FIRST_JOIN : playersWhoHasJustQuitted.contains(uuid) ? EventType.REJOIN : EventType.JOIN;
+		boolean hasPlayedBefore = in.readBoolean();
+		EventType type = hasPlayedBefore ? (playersWhoHasJustQuitted.contains(uuid) ? EventType.REJOIN : EventType.JOIN) : EventType.FIRST_JOIN;
 		if(type == EventType.REJOIN) playersWhoHasJustQuitted.remove(uuid);
 
 		boolean isBanned = in.readBoolean();
@@ -243,7 +240,7 @@ public class Main extends Plugin implements Listener {
 	}
 	
 	private void displayMessage(EventType event, String playerName, String currentServerName, String previousServerName){
-		for(ServerInfo server : proxy.getServers().values()){
+		for(ServerInfo server : getProxy().getServers().values()){
 			String serverName = server.getName();
 			if(!settings.containsKey(serverName) || server.getPlayers().isEmpty()) continue;
 			
@@ -293,10 +290,11 @@ public class Main extends Plugin implements Listener {
 					holder.setTask(task);
 					continue;
 				}case TITLE:{
-					Title title = proxy.createTitle();
-					title.title(component);
+					Title title = getProxy().createTitle();
+					//title.title(component);
+					title.title(EMPTY_COMPONENT).subTitle(component);
 					title.stay(mds.duration);
-					for(ProxiedPlayer player : server.getPlayers()) player.sendTitle(title);
+					for(ProxiedPlayer player : server.getPlayers()) title.send(player);
 					continue;
 				}default:
 					continue;
@@ -329,11 +327,11 @@ public class Main extends Plugin implements Listener {
 	
 	
 	private ScheduledTask schedule(int delay, TimeUnit unit, Runnable action){
-		return proxy.getScheduler().schedule(this, action, delay, unit);
+		return getProxy().getScheduler().schedule(this, action, delay, unit);
 	}
 	
 	private ScheduledTask schedule(int delay, int interval, TimeUnit unit, Runnable action){
-		return proxy.getScheduler().schedule(this, action, delay, interval, unit);
+		return getProxy().getScheduler().schedule(this, action, delay, interval, unit);
 	}
 	
 	private File folder(){

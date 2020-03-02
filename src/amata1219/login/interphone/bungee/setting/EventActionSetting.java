@@ -18,11 +18,17 @@ public class EventActionSetting {
 	
 	public static enum EventType {
 		
-		FIRST_JOIN,
-		JOIN,
-		REJOIN,
-		SWITCH,
-		QUIT;
+		FIRST_JOIN("FirstJoin"),
+		JOIN("Join"),
+		REJOIN("Rejoin"),
+		SWITCH("Switch"),
+		QUIT("Quit");
+		
+		public final String name;
+		
+		private EventType(String name){
+			this.name = name;
+		}
 		
 	}
 

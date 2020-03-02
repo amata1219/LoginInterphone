@@ -68,11 +68,11 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 	public void onQuit(PlayerQuitEvent e){
 		e.setQuitMessage("");
 	}
-
+	
 	@Override
 	public void onPluginMessageReceived(String tag, Player repeater, byte[] data) {
 		if(!tag.equalsIgnoreCase("BungeeCord") && !tag.equalsIgnoreCase("bungeecord:main")) return;
-
+		
 		ByteArrayDataInput in = ByteStreams.newDataInput(data);
 		Channel channel = Channel.newInstance(in);
 
@@ -80,7 +80,7 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 
 		if(channel.read().equalsIgnoreCase("CHECK")){
 			ByteArrayDataOutput out = ByteStreams.newDataOutput();
-
+			
 			out.writeUTF(Channel.PACKET_ID);
 			out.writeUTF("RESULT");
 			out.writeUTF(channel.read());

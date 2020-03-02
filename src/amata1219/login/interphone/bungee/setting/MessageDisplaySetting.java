@@ -12,9 +12,15 @@ public class MessageDisplaySetting {
 	
 	public static enum DisplayType {
 		
-		CHAT,
-		ACTION_BAR,
-		TITLE;
+		CHAT("Chat"),
+		ACTION_BAR("ActionBar"),
+		TITLE("Title");
+		
+		public final String name;
+		
+		private DisplayType(String name){
+			this.name = name;
+		}
 		
 	}
 
