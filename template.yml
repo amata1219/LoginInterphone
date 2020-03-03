@@ -1,7 +1,7 @@
 Alias: 'main'
 FirstJoin:
   Message:
-    Text: '&e[player] さんは &d&l*サーバーに初参加*&eです！'
+    Text: '&d[player] joined [server] in for the first time!'
     Chat:
       Displayable: true
     ActionBar:
@@ -19,7 +19,7 @@ FirstJoin:
     Interval: 0.05
 Join:
   Message:
-    Text: '&e[player] さんが&b&lログイン&eしました！〔[server]〕'
+    Text: '&b[player] joined [server]'
     Chat:
       Displayable: true
     ActionBar:
@@ -37,7 +37,7 @@ Join:
     Interval: 0.75
 Rejoin:
   Message:
-    Text: '&e[player] さんが戻ってきました！〔[server]〕'
+    Text: '&b[player] rejoined [server]'
     Chat:
       Displayable: true
     ActionBar:
@@ -55,7 +55,7 @@ Rejoin:
     Interval: 0.75
 Switch:
   Message:
-    Text: '&e[player] さんが移動しました！〔[from_server] >> [to_server]〕'
+    Text: '&b[player] switched from [from_server] to [to_server]'
     Chat:
       Displayable: true
     ActionBar:
@@ -73,7 +73,7 @@ Switch:
     Interval: 0.75
 Quit:
   Message:
-    Text: '&e[player] さんが&d&lログアウト&eしました！〔[server]〕'
+    Text: '&b[player] left [server]'
     Chat:
       Displayable: true
     ActionBar:
