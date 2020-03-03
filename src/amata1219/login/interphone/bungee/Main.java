@@ -208,7 +208,6 @@ public class Main extends Plugin implements Listener {
 
 		schedule(rejoin, TimeUnit.SECONDS, () -> playersWhoHasJustQuitted.remove(uuid));
 	}
-	
 
 	@EventHandler
 	public void onReceive(PluginMessageEvent e){
@@ -290,10 +289,10 @@ public class Main extends Plugin implements Listener {
 					holder.setTask(task);
 					continue;
 				}case TITLE:{
-					Title title = getProxy().createTitle();
-					//title.title(component);
-					title.title(EMPTY_COMPONENT).subTitle(component);
-					title.stay(mds.duration);
+					Title title = getProxy().createTitle()
+						.title(EMPTY_COMPONENT)
+						.subTitle(component)
+						.stay(mds.duration * 20);
 					for(ProxiedPlayer player : server.getPlayers()) title.send(player);
 					continue;
 				}default:
@@ -324,7 +323,6 @@ public class Main extends Plugin implements Listener {
 			server.sendData("BungeeCord", out.toByteArray());
 		}
 	}
-	
 	
 	private ScheduledTask schedule(int delay, TimeUnit unit, Runnable action){
 		return getProxy().getScheduler().schedule(this, action, delay, unit);
