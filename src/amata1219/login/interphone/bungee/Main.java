@@ -214,7 +214,7 @@ public class Main extends Plugin implements Listener {
 	public void onReceive(PluginMessageEvent e){
 		String tag = e.getTag();
 
-		if(!tag.equalsIgnoreCase("bungeecord:main")) return;
+		if(!(tag.equalsIgnoreCase("BungeeCord") || tag.equalsIgnoreCase("bungeecord:main"))) return;
 
 		ByteArrayDataInput in = ByteStreams.newDataInput(e.getData());
 		Channel channel = Channel.newInstance(in);
@@ -321,7 +321,7 @@ public class Main extends Plugin implements Listener {
 			out.writeFloat(sps.volume);
 			out.writeFloat(sps.pitch);
 
-			server.sendData("bungeecord:main", out.toByteArray());
+			server.sendData("BungeeCord", out.toByteArray());
 		}
 	}
 

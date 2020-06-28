@@ -42,8 +42,8 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 		pm.registerEvents(this, this);
 
 		Messenger messenger = getServer().getMessenger();
-		messenger.registerOutgoingPluginChannel(this, "bungeecord:main");
-		messenger.registerIncomingPluginChannel(this, "bungeecord:main", this);
+		messenger.registerOutgoingPluginChannel(this, "BungeeCord");
+		messenger.registerIncomingPluginChannel(this, "BungeeCord", this);
 	}
 
 	@Override
@@ -51,8 +51,8 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 		HandlerList.unregisterAll((JavaPlugin) this);
 
 		Messenger messenger = getServer().getMessenger();
-		messenger.unregisterOutgoingPluginChannel(this, "bungeecord:main");
-		messenger.unregisterIncomingPluginChannel(this, "bungeecord:main", this);
+		messenger.unregisterOutgoingPluginChannel(this, "BungeeCord");
+		messenger.unregisterIncomingPluginChannel(this, "BungeeCord", this);
 	}
 
 	public static Main getPlugin(){
@@ -71,7 +71,7 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 
 	@Override
 	public void onPluginMessageReceived(String tag, Player repeater, byte[] data) {
-		if(!tag.equalsIgnoreCase("bungeecord:main") && !tag.equalsIgnoreCase("bungeecord:main")) return;
+		if(!tag.equalsIgnoreCase("BungeeCord") && !tag.equalsIgnoreCase("bungeecord:main")) return;
 
 		ByteArrayDataInput in = ByteStreams.newDataInput(data);
 		Channel channel = Channel.newInstance(in);
@@ -93,7 +93,7 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 			boolean isBanned = mcbans == null ? false : mcbans.isBanned(player.getName());
 			out.writeBoolean(isBanned);
 
-			repeater.sendPluginMessage(this, "bungeecord:main", out.toByteArray());
+			repeater.sendPluginMessage(this, "BungeeCord", out.toByteArray());
 		}else if(channel.current().equalsIgnoreCase("PLAY")){
 			Sound sound = Sound.valueOf(channel.read());
 
