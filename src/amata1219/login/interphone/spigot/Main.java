@@ -33,7 +33,7 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 	@Override
 	public void onEnable(){
 		plugin = this;
-		
+
 		PluginManager pm = getServer().getPluginManager();
 
 		Plugin maybeMCBans = pm.getPlugin("MCBans");
@@ -42,8 +42,8 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 		pm.registerEvents(this, this);
 
 		Messenger messenger = getServer().getMessenger();
-		messenger.registerOutgoingPluginChannel(this, "BungeeCord");
-		messenger.registerIncomingPluginChannel(this, "BungeeCord", this);
+		messenger.registerOutgoingPluginChannel(this, "bungeecord:main");
+		messenger.registerIncomingPluginChannel(this, "bungeecord:main", this);
 	}
 
 	@Override
@@ -51,8 +51,8 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 		HandlerList.unregisterAll((JavaPlugin) this);
 
 		Messenger messenger = getServer().getMessenger();
-		messenger.unregisterOutgoingPluginChannel(this, "BungeeCord");
-		messenger.unregisterIncomingPluginChannel(this, "BungeeCord", this);
+		messenger.unregisterOutgoingPluginChannel(this, "bungeecord:main");
+		messenger.unregisterIncomingPluginChannel(this, "bungeecord:main", this);
 	}
 
 	public static Main getPlugin(){
@@ -68,11 +68,11 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 	public void onQuit(PlayerQuitEvent e){
 		e.setQuitMessage("");
 	}
-	
+
 	@Override
 	public void onPluginMessageReceived(String tag, Player repeater, byte[] data) {
-		if(!tag.equalsIgnoreCase("BungeeCord") && !tag.equalsIgnoreCase("bungeecord:main")) return;
-		
+		if(!tag.equalsIgnoreCase("bungeecord:main") && !tag.equalsIgnoreCase("bungeecord:main")) return;
+
 		ByteArrayDataInput in = ByteStreams.newDataInput(data);
 		Channel channel = Channel.newInstance(in);
 
@@ -80,20 +80,20 @@ public class Main extends JavaPlugin implements Listener, PluginMessageListener 
 
 		if(channel.read().equalsIgnoreCase("CHECK")){
 			ByteArrayDataOutput out = ByteStreams.newDataOutput();
-			
+
 			out.writeUTF(Channel.PACKET_ID);
 			out.writeUTF("RESULT");
 			out.writeUTF(channel.read());
 
 			UUID uuid = UUID.fromString(channel.current());
 			OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-			
+
 			out.writeBoolean(player.hasPlayedBefore());
-			
+
 			boolean isBanned = mcbans == null ? false : mcbans.isBanned(player.getName());
 			out.writeBoolean(isBanned);
 
-			repeater.sendPluginMessage(this, "BungeeCord", out.toByteArray());
+			repeater.sendPluginMessage(this, "bungeecord:main", out.toByteArray());
 		}else if(channel.current().equalsIgnoreCase("PLAY")){
 			Sound sound = Sound.valueOf(channel.read());
 
