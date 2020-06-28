@@ -1,5 +1,6 @@
 name: LoginInterphone
 main: amata1219.login.interphone.spigot.Main
 version: 4.0.1
+api-version: 1.15
 softdepend: [MCBans]
 author: amata1219(Twitter@amata1219)
