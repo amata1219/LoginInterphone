@@ -1,116 +1,61 @@
 package amata1219.login.interphone.spigot;
 
-import java.util.UUID;
-
+import amata1219.login.interphone.Channels;
+import amata1219.login.interphone.spigot.listener.PlayerListener;
+import amata1219.login.interphone.spigot.subscriber.CheckSubscriber;
+import amata1219.login.interphone.spigot.subscriber.PlaySubscriber;
+import amata1219.redis.plugin.messages.common.RedisPluginMessagesAPI;
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.messaging.Messenger;
-import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
+import java.util.UUID;
 
-import amata1219.login.interphone.bungee.Channel;
+public class Main extends JavaPlugin {
 
-public class Main extends JavaPlugin implements Listener, PluginMessageListener {
+	private static Main instance;
 
-	private static Main plugin;
-
-	private MCBansBridge mcbans;
+	private final RedisPluginMessagesAPI redis = (RedisPluginMessagesAPI) getServer().getPluginManager().getPlugin("RedisPluginMessages");
+	private MCBansBridge mcBansBridge;
 
 	@Override
 	public void onEnable(){
-		plugin = this;
+		instance = this;
 
-		PluginManager pm = getServer().getPluginManager();
+		Plugin mcBans = getServer().getPluginManager().getPlugin("MCBans");
+		if(mcBans != null) mcBansBridge = MCBansBridge.load(mcBans);
 
-		Plugin maybeMCBans = pm.getPlugin("MCBans");
-		if(maybeMCBans != null) mcbans = MCBansBridge.load(maybeMCBans);
+		registerEventListeners(
+				new PlayerListener()
+		);
 
-		pm.registerEvents(this, this);
+		redis.registerIncomingChannels(Channels.CHECK, Channels.PLAY);
+		redis.registerSubscriber(Channels.CHECK, new CheckSubscriber(redis, mcBansBridge));
+		redis.registerSubscriber(Channels.PLAY, new PlaySubscriber());
 
-		Messenger messenger = getServer().getMessenger();
-		messenger.registerOutgoingPluginChannel(this, "BungeeCord");
-		messenger.registerIncomingPluginChannel(this, "BungeeCord", this);
+		redis.registerOutgoingChannels(Channels.RESULT);
+	}
+
+	private void registerEventListeners(Listener... listeners) {
+		for (Listener listener : listeners) getServer().getPluginManager().registerEvents(listener, this);
 	}
 
 	@Override
 	public void onDisable(){
-		HandlerList.unregisterAll((JavaPlugin) this);
-
-		Messenger messenger = getServer().getMessenger();
-		messenger.unregisterOutgoingPluginChannel(this, "BungeeCord");
-		messenger.unregisterIncomingPluginChannel(this, "BungeeCord", this);
+		HandlerList.unregisterAll(this);
 	}
 
-	public static Main getPlugin(){
-		return plugin;
-	}
-
-	@EventHandler
-	public void onJoin(PlayerJoinEvent e){
-		e.setJoinMessage("");
-	}
-
-	@EventHandler
-	public void onQuit(PlayerQuitEvent e){
-		e.setQuitMessage("");
-	}
-
-	@Override
-	public void onPluginMessageReceived(String tag, Player repeater, byte[] data) {
-		if(!tag.equalsIgnoreCase("BungeeCord") && !tag.equalsIgnoreCase("bungeecord:main")) return;
-
-		ByteArrayDataInput in = ByteStreams.newDataInput(data);
-		Channel channel = Channel.newInstance(in);
-
-		if(!channel.read().equalsIgnoreCase(Channel.PACKET_ID)) return;
-
-		if(channel.read().equalsIgnoreCase("CHECK")){
-			ByteArrayDataOutput out = ByteStreams.newDataOutput();
-
-			out.writeUTF(Channel.PACKET_ID);
-			out.writeUTF("RESULT");
-			out.writeUTF(channel.read());
-
-			UUID uuid = UUID.fromString(channel.current());
-			OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-
-			out.writeBoolean(player.hasPlayedBefore());
-
-			boolean isBanned = mcbans == null ? false : mcbans.isBanned(player.getName());
-			out.writeBoolean(isBanned);
-
-			repeater.sendPluginMessage(this, "BungeeCord", out.toByteArray());
-		}else if(channel.current().equalsIgnoreCase("PLAY")){
-			Sound sound = Sound.valueOf(channel.read());
-
-			int repeatitons = in.readInt(), interval = in.readInt();
-			float volume = in.readFloat(), pitch = in.readFloat();
-
-			int n = 0;
-			for(int i = repeatitons; i > 0; i--){
-				new BukkitRunnable(){
-					@Override
-					public void run(){
-						for(Player player : Bukkit.getOnlinePlayers()) player.playSound(player.getLocation(), sound, volume, pitch);
-					}
-				}.runTaskLater(this, n);
-				n += interval;
-			}
-		}
+	public static Main instance(){
+		return instance;
 	}
 
 }
