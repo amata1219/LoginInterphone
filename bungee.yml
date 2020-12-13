@@ -1,5 +1,5 @@
 name: LoginInterphone
 main: amata1219.login.interphone.bungee.Main
 version: 4.2.0
-depends: [RedisPluginMessage]
+depends: [RedisPluginMessages]
 author: '@amata1219'

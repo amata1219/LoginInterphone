@@ -37,6 +37,9 @@ public class Main extends Plugin implements Listener {
 
 	private int rejoin = 60;
 
+	public final HashMap<UUID, String> playersToCurrentServers = new HashMap<>();
+	public final Set<UUID> quitters = new HashSet<>();
+
 	@Override
 	public void onEnable(){
 		plugin = this;
@@ -45,6 +48,9 @@ public class Main extends Plugin implements Listener {
 		redis.registerSubscriber(Channels.RESULT, new ResultSubscriber());
 
 		redis.registerOutgoingChannels(Channels.CHECK, Channels.PLAY);
+
+		textSender = new TextSender();
+		soundPlayer = new SoundPlayer(redis);
 
 		saveDefaultConfig(folder() + File.separator + "template.yml");
 
@@ -57,9 +63,6 @@ public class Main extends Plugin implements Listener {
 		);
 
 		loadConfig();
-
-		textSender = new TextSender();
-		soundPlayer = new SoundPlayer(redis);
 	}
 
 	private void registerEventListeners(Listener... listeners) {
@@ -165,10 +168,6 @@ public class Main extends Plugin implements Listener {
 			settings.put(name.substring(0, name.length() - 4), setting);
 		}
 	}
-
-	public final HashMap<UUID, String> playersToCurrentServers = new HashMap<>();
-	public final Set<UUID> quitters = new HashSet<>();
-
 
 	private File folder(){
 		return getDataFolder();

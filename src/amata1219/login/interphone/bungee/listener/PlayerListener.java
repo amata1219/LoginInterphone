@@ -2,8 +2,6 @@ package amata1219.login.interphone.bungee.listener;
 
 import amata1219.login.interphone.Channels;
 import amata1219.login.interphone.bungee.Main;
-import amata1219.login.interphone.bungee.messenger.SoundPlayer;
-import amata1219.login.interphone.bungee.messenger.TextSender;
 import amata1219.login.interphone.bungee.setting.EventActionSetting.EventType;
 import amata1219.redis.plugin.messages.common.RedisPluginMessagesAPI;
 import amata1219.redis.plugin.messages.common.io.ByteIO;
@@ -24,13 +22,9 @@ public class PlayerListener implements Listener {
 
     private final Main plugin = Main.instance();
     private final RedisPluginMessagesAPI redis;
-    private final TextSender textSender;
-    private final SoundPlayer soundPlayer;
 
     public PlayerListener(RedisPluginMessagesAPI redis) {
         this.redis = redis;
-        this.textSender = plugin.textSender();
-        this.soundPlayer = plugin.soundPlayer();
     }
 
     @EventHandler
@@ -64,9 +58,8 @@ public class PlayerListener implements Listener {
 
         schedule(1, TimeUnit.SECONDS, () -> {
             String serverName = player.getServer().getInfo().getName();
-
-            textSender.sendMessage(EventType.SWITCH, player.getName(), serverName, currentServers.get(playerUUID));
-            soundPlayer.playSound(EventType.SWITCH);
+            plugin.textSender().sendMessage(EventType.SWITCH, player.getName(), serverName, currentServers.get(playerUUID));
+            plugin.soundPlayer().playSound(EventType.SWITCH);
 
             currentServers.put(playerUUID, serverName);
         });
@@ -79,8 +72,8 @@ public class PlayerListener implements Listener {
 
         HashMap<UUID, String> currentServers = plugin.playersToCurrentServers;
 
-        textSender.sendMessage(EventType.QUIT, player.getName(), currentServers.get(playerUUID), null);
-        soundPlayer.playSound(EventType.QUIT);
+        plugin.textSender().sendMessage(EventType.QUIT, player.getName(), currentServers.get(playerUUID), null);
+        plugin.soundPlayer().playSound(EventType.QUIT);
 
         currentServers.remove(playerUUID);
         plugin.quitters.add(playerUUID);

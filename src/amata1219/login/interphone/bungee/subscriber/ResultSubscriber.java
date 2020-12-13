@@ -19,6 +19,9 @@ public class ResultSubscriber implements RedisSubscriber {
 
         if(!player.isConnected()) return;
 
+        String serverName = plugin.playersToCurrentServers.get(uuid);
+        if (!serverName.equals(sourceServerName)) return;
+
         boolean hasPlayedBefore = in.readBoolean();
         EventType type;
         if (hasPlayedBefore) {
@@ -31,7 +34,7 @@ public class ResultSubscriber implements RedisSubscriber {
         boolean isBanned = in.readBoolean();
         if(isBanned) return;
 
-        plugin.textSender().sendMessage(type, player.getName(), plugin.playersToCurrentServers.get(uuid), null);
+        plugin.textSender().sendMessage(type, player.getName(), serverName, null);
         plugin.soundPlayer().playSound(type);
     }
 

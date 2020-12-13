@@ -5,6 +5,7 @@ import amata1219.login.interphone.bungee.Main;
 import amata1219.login.interphone.bungee.setting.EventActionSetting;
 import amata1219.login.interphone.bungee.setting.EventActionSetting.EventType;
 import amata1219.login.interphone.bungee.setting.MessageDisplaySetting;
+import amata1219.login.interphone.bungee.setting.MessageDisplaySetting.DisplayType;
 import amata1219.login.interphone.bungee.setting.ServerSetting;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.Title;
@@ -31,12 +32,12 @@ public class TextSender {
             EventActionSetting eas = settings.get(serverName).eass.get(event);
             String text = eas.text.replace("[player]", playerName);
 
-            for(Map.Entry<MessageDisplaySetting.DisplayType, MessageDisplaySetting> entry : eas.mdss.entrySet()){
+            for(Map.Entry<DisplayType, MessageDisplaySetting> entry : eas.mdss.entrySet()){
                 MessageDisplaySetting mds = entry.getValue();
                 if(!mds.displayable) continue;
 
                 ServerSetting currentServerSetting = settings.get(currentServerName);
-                if(event == EventActionSetting.EventType.SWITCH){
+                if(event == EventType.SWITCH){
                     ServerSetting previousServerSetting = settings.get(previousServerName);
                     text = text.replace("[from_server]", previousServerSetting != null ? previousServerSetting.alias : "missing")
                             .replace("[to_server]", currentServerSetting != null ? currentServerSetting.alias : "missing");
