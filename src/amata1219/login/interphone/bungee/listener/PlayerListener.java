@@ -58,8 +58,8 @@ public class PlayerListener implements Listener {
 
         schedule(1, TimeUnit.SECONDS, () -> {
             String serverName = player.getServer().getInfo().getName();
-            plugin.textSender().sendMessage(EventType.SWITCH, player.getName(), serverName, currentServers.get(playerUUID));
             plugin.soundPlayer().playSound(EventType.SWITCH);
+            plugin.textSender().sendMessage(EventType.SWITCH, player.getName(), serverName, currentServers.get(playerUUID));
 
             currentServers.put(playerUUID, serverName);
         });
@@ -72,8 +72,8 @@ public class PlayerListener implements Listener {
 
         HashMap<UUID, String> currentServers = plugin.playersToCurrentServers;
 
-        plugin.textSender().sendMessage(EventType.QUIT, player.getName(), currentServers.get(playerUUID), null);
         plugin.soundPlayer().playSound(EventType.QUIT);
+        plugin.textSender().sendMessage(EventType.QUIT, player.getName(), currentServers.get(playerUUID), null);
 
         currentServers.remove(playerUUID);
         plugin.quitters.add(playerUUID);

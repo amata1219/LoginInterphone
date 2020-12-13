@@ -34,8 +34,8 @@ public class ResultSubscriber implements RedisSubscriber {
         boolean isBanned = in.readBoolean();
         if(isBanned) return;
 
-        plugin.textSender().sendMessage(type, player.getName(), serverName, null);
         plugin.soundPlayer().playSound(type);
+        plugin.textSender().sendMessage(type, player.getName(), serverName, null);
     }
 
 }
