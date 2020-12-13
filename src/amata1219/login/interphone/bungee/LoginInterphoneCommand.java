@@ -7,7 +7,7 @@ import net.md_5.bungee.api.plugin.Command;
 
 public class LoginInterphoneCommand extends Command {
 	
-	private final Main plugin = Main.getPlugin();
+	private final Main plugin = Main.instance();
 	
 	public LoginInterphoneCommand(){
 		super("logininterphone", "login.interphone.logininterphone");

@@ -1,52 +1,39 @@
 package amata1219.login.interphone.bungee;
 
+import amata1219.login.interphone.Channels;
+import amata1219.login.interphone.bungee.listener.PlayerListener;
+import amata1219.login.interphone.bungee.messenger.SoundPlayer;
+import amata1219.login.interphone.bungee.messenger.TextSender;
+import amata1219.login.interphone.bungee.setting.ServerSetting;
+import amata1219.login.interphone.bungee.setting.ServerSettingLoading;
+import amata1219.login.interphone.bungee.subscriber.ResultSubscriber;
+import amata1219.redis.plugin.messages.common.RedisPluginMessagesAPI;
+import com.google.common.io.ByteStreams;
+import net.md_5.bungee.api.plugin.Listener;
+import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
-
-import amata1219.login.interphone.bungee.setting.EventActionSetting;
-import amata1219.login.interphone.bungee.setting.EventActionSetting.EventType;
-import amata1219.login.interphone.bungee.setting.MessageDisplaySetting;
-import amata1219.login.interphone.bungee.setting.MessageDisplaySetting.DisplayType;
-import amata1219.login.interphone.bungee.setting.ServerSetting;
-import amata1219.login.interphone.bungee.setting.ServerSettingLoading;
-import amata1219.login.interphone.bungee.setting.SoundPlaySetting;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.Title;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.config.ServerInfo;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.event.PlayerDisconnectEvent;
-import net.md_5.bungee.api.event.PluginMessageEvent;
-import net.md_5.bungee.api.event.ServerSwitchEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.api.plugin.PluginManager;
-import net.md_5.bungee.api.scheduler.ScheduledTask;
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
-import net.md_5.bungee.event.EventHandler;
-import net.md_5.bungee.event.EventPriority;
 
 public class Main extends Plugin implements Listener {
 
 	private static Main plugin;
-	private static final TextComponent EMPTY_COMPONENT = new TextComponent(" ");
 
-	private final HashMap<String, ServerSetting> settings = new HashMap<>();
+	private final RedisPluginMessagesAPI redis = (RedisPluginMessagesAPI) getProxy().getPluginManager().getPlugin("RedisPluginMessages");
+
+	private TextSender textSender;
+	private SoundPlayer soundPlayer;
+
+	public final HashMap<String, ServerSetting> settings = new HashMap<>();
 
 	private int rejoin = 60;
 
@@ -54,17 +41,29 @@ public class Main extends Plugin implements Listener {
 	public void onEnable(){
 		plugin = this;
 
+		redis.registerIncomingChannels(Channels.RESULT);
+		redis.registerSubscriber(Channels.RESULT, new ResultSubscriber());
+
+		redis.registerOutgoingChannels(Channels.CHECK, Channels.PLAY);
+
 		saveDefaultConfig(folder() + File.separator + "template.yml");
 
 		loadServerSettings();
 
-		getProxy().registerChannel("bungeecord:main");
+		getProxy().getPluginManager().registerCommand(this, new LoginInterphoneCommand());
 
-		PluginManager pm = getProxy().getPluginManager();
-		pm.registerCommand(this, new LoginInterphoneCommand());
-		pm.registerListener(this, this);
+		registerEventListeners(
+				new PlayerListener(redis)
+		);
 
 		loadConfig();
+
+		textSender = new TextSender();
+		soundPlayer = new SoundPlayer(redis);
+	}
+
+	private void registerEventListeners(Listener... listeners) {
+		for (Listener listener : listeners) getProxy().getPluginManager().registerListener(this, listener);
 	}
 
 	@Override
@@ -73,8 +72,20 @@ public class Main extends Plugin implements Listener {
 		getProxy().unregisterChannel("bungeecord:main");
 	}
 
-	public static Main getPlugin(){
+	public static Main instance(){
 		return plugin;
+	}
+
+	public TextSender textSender() {
+		return textSender;
+	}
+
+	public SoundPlayer soundPlayer() {
+		return soundPlayer;
+	}
+
+	public int rejoinTicks() {
+		return rejoin;
 	}
 
 	public void loadConfig(){
@@ -155,200 +166,12 @@ public class Main extends Plugin implements Listener {
 		}
 	}
 
-	private final HashMap<UUID, String> currentServer = new HashMap<>();
-	private final Set<UUID> playersWhoHasJustQuitted = new HashSet<>();
+	public final HashMap<UUID, String> playersToCurrentServers = new HashMap<>();
+	public final Set<UUID> quitters = new HashSet<>();
 
-	@EventHandler
-	public void onJoin(ServerSwitchEvent event){
-		ProxiedPlayer player = event.getPlayer();
-		UUID uuid = player.getUniqueId();
-
-		if(currentServer.containsKey(uuid)) return;
-
-		schedule(250, TimeUnit.MILLISECONDS, () -> {
-			ServerInfo server = player.getServer().getInfo();
-			currentServer.put(uuid, server.getName());
-
-			ByteArrayDataOutput out = ByteStreams.newDataOutput();
-
-			out.writeUTF(Channel.PACKET_ID);
-			out.writeUTF("CHECK");
-			out.writeUTF(uuid.toString());
-
-			server.sendData("bungeecord:main", out.toByteArray());
-		});
-	}
-
-	@EventHandler(priority = EventPriority.LOW)
-	public void onSwitch(ServerSwitchEvent e){
-		ProxiedPlayer player = e.getPlayer();
-		UUID uuid = player.getUniqueId();
-
-		if(!currentServer.containsKey(uuid)) return;
-
-		schedule(1, TimeUnit.SECONDS, () -> {
-			String serverName = player.getServer().getInfo().getName();
-
-			displayMessage(EventType.SWITCH, player.getName(), serverName, currentServer.get(uuid));
-			playSound(EventType.SWITCH);
-
-			currentServer.put(uuid, serverName);
-		});
-	}
-
-	@EventHandler
-	public void onQuit(PlayerDisconnectEvent e){
-		ProxiedPlayer player = e.getPlayer();
-		UUID uuid = player.getUniqueId();
-
-		displayMessage(EventType.QUIT, player.getName(), currentServer.get(uuid), null);
-		playSound(EventType.QUIT);
-
-		currentServer.remove(uuid);
-		playersWhoHasJustQuitted.add(uuid);
-
-		schedule(rejoin, TimeUnit.SECONDS, () -> playersWhoHasJustQuitted.remove(uuid));
-	}
-
-	@EventHandler
-	public void onReceive(PluginMessageEvent e){
-		String tag = e.getTag();
-
-		if(!(tag.equalsIgnoreCase("BungeeCord") || tag.equalsIgnoreCase("bungeecord:main"))) return;
-
-		ByteArrayDataInput in = ByteStreams.newDataInput(e.getData());
-		Channel channel = Channel.newInstance(in);
-
-		if(!channel.read().equalsIgnoreCase(Channel.PACKET_ID)) return;
-
-		if(!channel.read().equalsIgnoreCase("RESULT")) return;
-
-		UUID uuid = UUID.fromString(channel.read());
-		ProxiedPlayer player = getProxy().getPlayer(uuid);
-
-		if(!player.isConnected()) return;
-
-		boolean hasPlayedBefore = in.readBoolean();
-		EventType type = hasPlayedBefore ? (playersWhoHasJustQuitted.contains(uuid) ? EventType.REJOIN : EventType.JOIN) : EventType.FIRST_JOIN;
-		if(type == EventType.REJOIN) playersWhoHasJustQuitted.remove(uuid);
-
-		boolean isBanned = in.readBoolean();
-		if(isBanned) return;
-
-		displayMessage(type, player.getName(), currentServer.get(uuid), null);
-		playSound(type);
-	}
-
-	private void displayMessage(EventType event, String playerName, String currentServerName, String previousServerName){
-		for(ServerInfo server : getProxy().getServers().values()){
-			String serverName = server.getName();
-			if(!settings.containsKey(serverName) || server.getPlayers().isEmpty()) continue;
-
-			EventActionSetting eas = settings.get(serverName).eass.get(event);
-			String text = eas.text.replace("[player]", playerName);
-
-			for(Entry<DisplayType, MessageDisplaySetting> entry : eas.mdss.entrySet()){
-				MessageDisplaySetting mds = entry.getValue();
-				if(!mds.displayable) continue;
-
-				ServerSetting currentServerSetting = settings.get(currentServerName);
-				if(event == EventType.SWITCH){
-					ServerSetting previousServerSetting = settings.get(previousServerName);
-					text = text.replace("[from_server]", previousServerSetting != null ? previousServerSetting.alias : "missing")
-							.replace("[to_server]", currentServerSetting != null ? currentServerSetting.alias : "missing");
-				}else{
-					text = text.replace("[server]", currentServerSetting != null ? currentServerSetting.alias : "missing");
-				}
-
-				TextComponent component = new TextComponent(text);
-
-				switch(entry.getKey()){
-				case CHAT:{
-					for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(component);
-					continue;
-				}case ACTION_BAR:{
-					AtomicInteger count = new AtomicInteger();
-
-					TaskHolder holder = new TaskHolder();
-
-					ScheduledTask task = schedule(0, 1, TimeUnit.SECONDS, () -> {
-						for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(ChatMessageType.ACTION_BAR, component);
-
-						if(count.incrementAndGet() >= mds.duration){
-							if(mds.duration % 2 == 0){
-								holder.cancelTask();
-								return;
-							}
-
-							schedule(1, TimeUnit.SECONDS, () -> {
-								for(ProxiedPlayer player : server.getPlayers()) player.sendMessage(ChatMessageType.ACTION_BAR, EMPTY_COMPONENT);
-								holder.cancelTask();
-							});
-						}
-					});
-
-					holder.setTask(task);
-					continue;
-				}case TITLE:{
-					Title title = getProxy().createTitle()
-						.title(EMPTY_COMPONENT)
-						.subTitle(component)
-						.stay(mds.duration * 20);
-					for(ProxiedPlayer player : server.getPlayers()) title.send(player);
-					continue;
-				}default:
-					continue;
-				}
-			}
-		}
-	}
-
-	private void playSound(EventType event){
-		for(ServerInfo server : getProxy().getServers().values()){
-			String serverName = server.getName();
-			if(!settings.containsKey(serverName) || server.getPlayers().isEmpty()) continue;
-
-			SoundPlaySetting sps = settings.get(serverName).eass.get(event).sps;
-			if(!sps.playable) continue;
-
-			ByteArrayDataOutput out = ByteStreams.newDataOutput();
-
-			out.writeUTF(Channel.PACKET_ID);
-			out.writeUTF("PLAY");
-			out.writeUTF(sps.name);
-			out.writeInt(sps.repetitions);
-			out.writeInt(sps.interval);
-			out.writeFloat(sps.volume);
-			out.writeFloat(sps.pitch);
-
-			server.sendData("BungeeCord", out.toByteArray());
-		}
-	}
-
-	private ScheduledTask schedule(int delay, TimeUnit unit, Runnable action){
-		return getProxy().getScheduler().schedule(this, action, delay, unit);
-	}
-
-	private ScheduledTask schedule(int delay, int interval, TimeUnit unit, Runnable action){
-		return getProxy().getScheduler().schedule(this, action, delay, interval, unit);
-	}
 
 	private File folder(){
 		return getDataFolder();
-	}
-
-	private static class TaskHolder {
-
-		private ScheduledTask task;
-
-		public void setTask(ScheduledTask task){
-			this.task = task;
-		}
-
-		public void cancelTask(){
-			if(task != null) task.cancel();
-		}
-
 	}
 
 }

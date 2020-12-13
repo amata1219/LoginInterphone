@@ -8,10 +8,7 @@ import com.mcbans.firestar.mcbans.bukkitListeners.PlayerListener;
 public class MCBansBridge {
 
 	public static MCBansBridge load(Plugin plugin){
-		if(!(plugin instanceof MCBans))
-			return null;
-
-		return new MCBansBridge();
+		return plugin instanceof MCBans ? new MCBansBridge() : null;
 	}
 
 	private MCBansBridge(){
